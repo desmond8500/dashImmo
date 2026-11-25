@@ -1,175 +1,102 @@
 <div>
-    @component('components.tabler.header', ['title'=>'Contrats', 'subtitle'=>'Immo'])
-
-    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
-        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-plus" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"> <path stroke="none" d="M0 0h24v24H0z" fill="none"></path> <line x1="12" y1="5" x2="12" y2="19"></line> <line x1="5" y1="12" x2="19" y2="12"></line> </svg>
-        Contrat
-    </button>
-
-    <a class="btn btn-primary" href="{{ route('tabler.all_contrat_pdf') }}" target="_blank">
-        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-file-text" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"> <path stroke="none" d="M0 0h24v24H0z" fill="none"></path> <path d="M14 3v4a1 1 0 0 0 1 1h4"></path> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"></path> <line x1="9" y1="9" x2="10" y2="9"></line> <line x1="9" y1="13" x2="15" y2="13"></line> <line x1="9" y1="17" x2="15" y2="17"></line> </svg>
-        PDF
-    </a>
-
-    <!-- Modal -->
-    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="exampleModalLabel">Ajouter un contrat</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body form-fieldset">
-            <form class="row">
-                <div class="mb-3 col-md-6">
-                    <label class="form-label">Client</label>
-                    <select class="form-select" wire:model="client_id">
-                        <option value="0">Sélectionnez un client</option>
-                        @foreach ($clients as $client)
-                            <option value="{{ $client->id }}">{{ $client->prenom  }} {{ $client->nom }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="mb-3 col-md-6">
-                    <label class="form-label">Appartement</label>
-                    <select class="form-select" wire:model="appartement_id">
-                        <option value="0">Sélectionnez un Appartement</option>
-                        @foreach ($appartements as $appartement)
-                            <option value="{{ $appartement->id }}">{{ $appartement->nom }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="mb-3 col-md-6">
-                    <label class="form-label">Montant</label>
-                    <input type="text" class="form-control" wire:model="montant" placeholder="montant">
-                </div>
-
-                <div class="text-end">
-                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-                  <button type="button" class="btn btn-primary" data-bs-dismiss="modal" wire:click="add_contract()">Ajouter</button>
-                </div>
-            </form>
-          </div>
-        </div>
-      </div>
-    </div>
-
+    @php($F = \App\Support\Format::class)
+    @component('components.tabler.header', ['title' => 'Contrats', 'subtitle' => 'Contrats de location'])
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalContrat" wire:click="create">
+            <i class="ti ti-plus"></i> Contrat
+        </button>
+        <a class="btn btn-outline-primary" href="{{ route('tabler.all_contrat_pdf') }}" target="_blank">
+            <i class="ti ti-file-type-pdf"></i> Tous les contrats
+        </a>
     @endcomponent
 
-    <div class="row g-2">
-        <div class="col-md-12">
-            <input type="text" wire:model.live="search" class="form-control" placeholder="Rechercher un contrat par client ou appartement...">
-        </div>
-        @foreach ($contrats as $key => $contrat)
-
-                @if ($contrat_id == $contrat->id)
-                    <div class="col-md-12">
-                        <div class="card">
-                            <div class="card-header">
-                                <div class="card-title">
-                                    <h2>Editer un contrat</h2>
-                                </div>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="mb-3 col-md-4">
-                                        <label class="form-label">Client</label>
-                                        <select class="form-select" wire:model="client_id">
-                                            <option value="0">Sélectionnez un client</option>
-                                            @foreach ($clients as $client)
-                                            <option value="{{ $client->id }}">{{ $client->prenom }} {{ $client->nom }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="mb-3 col-md-4">
-                                        <label class="form-label">Appartement</label>
-                                        <select class="form-select" wire:model="appartement_id">
-                                            <option value="0">Sélectionnez un Appartement</option>
-                                            @foreach ($appartements as $appartement)
-                                            <option value="{{ $appartement->id }}">{{ $appartement->nom }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="mb-3 col-md-4">
-                                        <label class="form-label">Montant</label>
-                                        <input type="text" class="form-control" wire:model="montant" placeholder="montant">
-                                    </div>
-                                    <div class="mb-3 col-md-4">
-                                        <label class="form-label">Type</label>
-                                        <select class="form-select" wire:model="type">
-                                            <option value="0">Select</option>
-                                            <option value="habitation">Habitation</option>
-                                            <option value="bureau">Bureau</option>
-                                        </select>
-                                    </div>
-                                    <div class="mb-3 col-md-4">
-                                        <label class="form-label">Date</label>
-                                        <input type="date" class="form-control" wire:model="date" placeholder="Date">
-                                    </div>
-                                    <div class="mb-3 col-md-4">
-                                        <label class="form-label">Date de début de contrat</label>
-                                        <input type="date" class="form-control" wire:model="debut" placeholder="Date">
-                                    </div>
-                                    <div class="mb-3 col-md-4">
-                                        <label class="form-label">Date de fin de contrat</label>
-                                        <input type="date" class="form-control" wire:model="fin" placeholder="Date">
-                                    </div>
-
-                                    <div class="mb-3 col-md-4">
-                                        <label class="form-label">Signature</label>
-                                        <select class="form-select" wire:model="sign1">
-                                            <option value="">Select</option>
-                                            <option value="1">Active</option>
-                                            <option value="0">Inactive</option>
-                                        </select>
-                                    </div>
-
-                                    <div class="text-end">
-                                        <button type="button" class="btn btn-secondary" wire:click="$set('contrat_id', 0)">Fermer</button>
-                                        <button type="button" class="btn btn-primary" data-bs-dismiss="modal"
-                                            wire:click="update_contract()">Modifier</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                @else
-                    <div class="col-md-4">
-                        <div class="card">
-                            <div class="card-header">
-                                @if ($contrat->client->statut)
-                                    <div class="card-title ">{{ ucfirst($contrat->client->prenom) }} {{ strtoupper(ucfirst($contrat->client->nom)) }}</div>
-                                @else
-                                    <div class="card-title text-danger ">{{ ucfirst($contrat->client->prenom) }} {{ strtoupper(ucfirst($contrat->client->nom)) }}</div>
-                                @endif
-                                <div class="card-actions">
-                                    <a class="btn btn-icon btn-primary " wire:click="edit_contract('{{ $contrat->id }}')">
-                                        <i class="ti ti-edit"></i>
-                                    </a>
-                                    <a class="btn btn-primary rounded" href="{{ route('tabler.contrat_pdf',['contrat_id'=>$contrat->id]) }}"
-                                        target="_blank">PDF</a>
-                                </div>
-                            </div>
-                            <div class="card-body">
-                                <div class="row g-2 row-deck">
-                                    <div class="col text-primary fw-bold" style="font-size: 20px">
-                                        {{ $contrat->appartement->nom }} <br>
-                                    </div>
-                                    <div class="col-auto">
-                                        <span style="font-size: 20px">{{ number_format($contrat->montant, 0, ',', ' ') }} F</span>
-                                    </div>
-                                    <div class="col-12">
-                                        <span class="me-1">{{ $contrat->appartement->adresse }}</span>
-                                        <span class=" text-primary"> {{ $appartement->type ?? '(Type)' }}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                @endif
-        @endforeach
-
-
+    <div class="mb-3">
+        @include('components.tabler.search', ['placeholder' => 'Rechercher un contrat par client ou appartement…'])
     </div>
 
+    <div class="row row-cards">
+        @forelse ($contrats as $contrat)
+            @if ($contrat_id == $contrat->id)
+                <div class="col-12" wire:key="contrat-edit-{{ $contrat->id }}">
+                    <div class="card">
+                        <div class="card-header"><h3 class="card-title">Modifier le contrat de {{ $F::person($contrat->client) }}</h3></div>
+                        <form wire:submit="update_contract">
+                            <div class="card-body row">
+                                @include('_form.contrat_form')
+                            </div>
+                            <div class="card-footer d-flex justify-content-end gap-2">
+                                <button type="button" class="btn" wire:click="close">Annuler</button>
+                                <button type="submit" class="btn btn-primary">
+                                    <span wire:loading wire:target="update_contract" class="spinner-border spinner-border-sm me-2"></span>Enregistrer
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            @else
+                <div class="col-md-6 col-xl-4" wire:key="contrat-{{ $contrat->id }}">
+                    <div class="card h-100">
+                        @unless ($contrat->client?->statut)
+                            <div class="card-status-top bg-red" title="Client parti"></div>
+                        @endunless
+                        <div class="card-header">
+                            <div class="text-truncate">
+                                <a href="{{ route('tabler.contrat', ['contrat_id' => $contrat->id]) }}" class="card-title text-reset {{ $contrat->client?->statut ? '' : 'text-red' }}">
+                                    {{ $F::person($contrat->client) }}
+                                </a>
+                                <div class="card-subtitle">{{ $types[$contrat->type] ?? 'Type non précisé' }}</div>
+                            </div>
+                            <div class="card-actions btn-list flex-nowrap">
+                                <button class="btn btn-ghost-primary btn-icon" wire:click="edit_contract({{ $contrat->id }})" title="Modifier">
+                                    <i class="ti ti-edit"></i>
+                                </button>
+                                <a class="btn btn-ghost-primary btn-icon" href="{{ route('tabler.contrat_pdf', ['contrat_id' => $contrat->id]) }}" target="_blank" title="Contrat PDF">
+                                    <i class="ti ti-file-type-pdf"></i>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="text-truncate me-2">
+                                    <div class="fw-bold text-primary fs-3">{{ $contrat->appartement->nom ?? '—' }}</div>
+                                    <div class="text-secondary small text-truncate">{{ $contrat->appartement->adresse ?? '' }}</div>
+                                </div>
+                                <div class="fs-3 fw-bold text-nowrap">{{ $F::money($contrat->montant) }}</div>
+                            </div>
+                            @if ($contrat->debut || $contrat->fin)
+                                <div class="small text-secondary mt-2"><i class="ti ti-calendar"></i> {{ $F::date($contrat->debut) }} → {{ $F::date($contrat->fin) }}</div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            @endif
+        @empty
+            @include('components.tabler.empty', ['icon' => 'ti-file-text', 'title' => 'Aucun contrat', 'message' => $search ? 'Aucun contrat ne correspond à la recherche.' : 'Ajoutez un premier contrat.'])
+        @endforelse
+    </div>
+
+    @if ($contrats->hasPages())
+        <div class="mt-3">{{ $contrats->links() }}</div>
+    @endif
+
+    <div class="modal modal-blur fade" id="modalContrat" tabindex="-1" aria-hidden="true" wire:ignore.self>
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <form class="modal-content" wire:submit="add_contract">
+                <div class="modal-header">
+                    <h5 class="modal-title">Ajouter un contrat</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                </div>
+                <div class="modal-body row">
+                    @if (! $contrat_id)
+                        @include('_form.contrat_form')
+                    @endif
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn me-auto" data-bs-dismiss="modal">Fermer</button>
+                    <button type="submit" class="btn btn-primary">
+                        <span wire:loading wire:target="add_contract" class="spinner-border spinner-border-sm me-2"></span>Ajouter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>

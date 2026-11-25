@@ -1,15 +1,10 @@
 <div class="col-md-12 mb-3">
-    <div class="form-floating">
-        <input type="text" class="form-control"  wire:model="key" placeholder="Clé">
-        <label class="floating-input">Clé</label>
-        @error('key') <span class='text-danger'>{{ $message }}</span> @enderror
-    </div>
+    <label class="form-label required">Clé</label>
+    <input type="text" class="form-control @error('key') is-invalid @enderror" wire:model="key" placeholder="ex. start_date">
+    @error('key') <div class="invalid-feedback">{{ $message }}</div> @enderror
 </div>
 <div class="col-md-12 mb-3">
-    <div class="form-floating">
-        <input type="text" class="form-control" wire:model="value" placeholder="Valeur">
-        <label class="floating-input">Valeur</label>
-    </div>
-    @error('value') <span class='text-danger'>{{ $message }}</span> @enderror
+    <label class="form-label">Valeur</label>
+    <input type="text" class="form-control @error('value') is-invalid @enderror" wire:model="value" placeholder="Valeur">
+    @error('value') <div class="invalid-feedback">{{ $message }}</div> @enderror
 </div>
-

@@ -36,7 +36,7 @@ class PdfController extends Controller
 
     public function show_all_contrat()
     {
-        $contrats = Contrat::all();
+        $contrats = Contrat::with(['client', 'appartement'])->get();
 
         $data = array(
             "contrats" => $contrats,
@@ -51,10 +51,10 @@ class PdfController extends Controller
     public function some_contrats_pdf($batiment_id)
     {
         if ($batiment_id) {
-            $batiment = Batiment::find($batiment_id);
-            $contrats = $batiment->contrats;
+            $batiment = Batiment::findOrFail($batiment_id);
+            $contrats = $batiment->contrats()->with(['client', 'appartement'])->get();
         } else {
-            $contrats = Contrat::all();
+            $contrats = Contrat::with(['client', 'appartement'])->get();
         }
 
         $data = array(
@@ -72,7 +72,7 @@ class PdfController extends Controller
 
     public function show_clients()
     {
-        $clients = Client::where('statut', 1)->get();
+        $clients = Client::with('contrat.appartement')->where('statut', 1)->get();
 
         $data = array(
             "clients" => $clients,
@@ -85,7 +85,7 @@ class PdfController extends Controller
 
     public function show_appartements()
     {
-        $appartements = Appartement::where('statut', 1)
+        $appartements = Appartement::with(['batiment', 'contrat.client', 'compteur'])->where('statut', 1)
             ->orderBy('batiment_id', 'asc')
             ->orderBy('numero', 'asc')
             ->get();
@@ -100,7 +100,7 @@ class PdfController extends Controller
 
     public function appartement_compteurs_pdf()
     {
-        $compteurs = Compteur::where('type', 'EAU')->get();
+        $compteurs = Compteur::with('appartement.contrat.client')->where('type', 'EAU')->get();
 
         $data = array(
             "compteurs" => $compteurs,

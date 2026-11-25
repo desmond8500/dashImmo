@@ -1,167 +1,117 @@
 <div>
-    @component('components.tabler.header', ['title'=>'Clients', 'subtitle'=>'Immo'])
-        {{-- @env('local')
-            <button class="btn btn-primary" wire:click="initClients()">
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-plus" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"> <path stroke="none" d="M0 0h24v24H0z" fill="none"></path> <line x1="12" y1="5" x2="12" y2="19"></line> <line x1="5" y1="12" x2="19" y2="12"></line> </svg>
-                Clients
-            </button>
-        @endenv --}}
-        <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#immoClient">
-            <i class="ti ti-plus"></i>
-            Client
-        </a>
-        <a class="btn btn-primary" href="{{ route('tabler.clients_pdf') }}" target="_blank">
-            <i class="ti ti-file-type-pdf"></i>
-            PDF
+    @php($F = \App\Support\Format::class)
+    @component('components.tabler.header', ['title' => 'Clients', 'subtitle' => 'Locataires'])
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#immoClient" wire:click="create">
+            <i class="ti ti-plus"></i> Client
+        </button>
+        <a class="btn btn-outline-primary" href="{{ route('tabler.clients_pdf') }}" target="_blank">
+            <i class="ti ti-file-type-pdf"></i> PDF
         </a>
     @endcomponent
 
-    <div class="row g-2">
+    <div class="row g-2 mb-3">
         <div class="col">
-            <div class="input-icon">
-                <input type="text" class="form-control form-control-rounded" wire:model.live="search" placeholder="Chercher ">
-                <span class="input-icon-addon">
-                    <i class="ti ti-search"></i>
-                </span>
-            </div>
+            @include('components.tabler.search', ['placeholder' => 'Rechercher par prénom, nom ou numéro d\'identité…'])
         </div>
-
-        <div class="w-100"></div>
-
-        @foreach ($clients as $key => $client)
-            @if ($client_id == $client->id)
-                <div class="col-md-6">
-                    <div class="card card-body ">
-                        <div class="row p-2">
-                            <div class="form-group col-md-5 mb-3">
-                                <label class="form-label">Prénom du client </label>
-                                <input type="text" wire:model="prenom" class="form-control" placeholder="Prénom">
-                            </div>
-                            <div class="form-group col-md-5 mb-3">
-                                <label class="form-label">Nom du client </label>
-                                <input type="text" wire:model="nom" class="form-control" placeholder="nom">
-                            </div>
-                            <div class="col-md-2 mb-3">
-                                <label class="form-label">Statut</label>
-                                <select wire:model="statut" class="form-control">
-                                    <option value="0">Parti</option>
-                                    <option value="1">Résident</option>
-                                </select>
-                            </div>
-                            <div class="form-group col-md-4 mb-3">
-                                <label class="form-label">Numéro d'identité</label>
-                                <input type="text" wire:model="ci" class="form-control" placeholder="Numéro de carte d'identité">
-                            </div>
-                            <div class="form-group col-md-4 mb-3">
-                                <label class="form-label">Délivrance</label>
-                                <input type="text" wire:model="delivre" class="form-control"
-                                    placeholder="Date et lieu de délivrance">
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Genre</label>
-                                <select wire:model="genre" class="form-control">
-                                    <option value="homme">Homme</option>
-                                    <option value="femme">Femme</option>
-                                </select>
-                            </div>
-                            <div class="col-md-12 mt-2">
-                                <div class="text-end">
-                                    <button wire:click="$set('client_id',0)" class="btn btn-secondary">Fermer</button>
-                                    <button wire:click="delete" class="btn btn-danger">Supprimer</button>
-                                    <button wire:click="update" class="btn btn-primary">Modifier</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-            @else
-                <div class="col-md-4">
-                    <div class="card p-2">
-                        @if ($client->statut)
-                            {{-- Actif  --}}
-                        @else
-                            {{-- Inactif  --}}
-                            <div class="card-status-top bg-danger"></div>
-                        @endif
-                        <div class="row">
-                            <div class="col-auto">
-                                <span class="btn btn-icon" >
-                                    <i class="ti ti-user"></i>
-                                </span>
-                            </div>
-                            <div class="col">
-                                <div wire:click="gotoClient('{{ $client->id }}')" type="button">
-                                    <div class="fw-bold">{{ ucfirst($client->prenom) }} {{ strtoupper($client->nom) }}</div>
-                                    @if ($client->genre == 'femme') Femme @else Homme @endif
-                                </div>
-                            </div>
-                            <div class="col-auto">
-                                <button class="btn btn-outline-primary btn-icon" wire:click="edit('{{ $client->id }}')">
-                                    <i class="ti ti-edit"></i>
-                                </button>
-                            </div>
-                            <div class="w-100 border"></div>
-                            <div class="col">
-                                <div><b>ID:</b> {{ $client->ci ?? '(Numéro D\'identité)'}}</div>
-                                <div><b>Delivrance:</b> {{ $client->delivre ?? '(Date de délivrance)'}}</div>
-                                <div>{{ $client->contrat->appartement->nom ?? '(Nom Local)'}} - {{ $client->contrat->appartement->adresse ?? '(Adresse du local)'}}</div>
-                            </div>
-                            <div class="col-auto">
-                                <span class="fw-bold" style="font-size: 18px">{{ number_format($client->contrat->montant ?? 0, 0, ',', ' ') }} F</span>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-            @endif
-        @endforeach
-
-        <div class="col-12">
-            <div class="card p-2">
-                {{ $clients->links() }}
-            </div>
+        <div class="col-12 col-sm-auto">
+            <select class="form-select" wire:model.live="filtre_statut">
+                <option value="">Tous les clients</option>
+                <option value="1">Résidents</option>
+                <option value="0">Partis</option>
+            </select>
         </div>
     </div>
 
+    <div class="row row-cards">
+        @forelse ($clients as $client)
+            @if ($client_id == $client->id)
+                <div class="col-md-12 col-xl-8" wire:key="client-edit-{{ $client->id }}">
+                    <div class="card">
+                        <div class="card-header"><h3 class="card-title">Modifier {{ $F::person($client) }}</h3></div>
+                        <form wire:submit="update">
+                            <div class="card-body row">
+                                @include('_form.client_form')
+                            </div>
+                            <div class="card-footer d-flex gap-2">
+                                <button type="button" wire:click="delete" wire:confirm="Supprimer ce client ?" class="btn btn-outline-danger me-auto">
+                                    <i class="ti ti-trash"></i> Supprimer
+                                </button>
+                                <button type="button" wire:click="close" class="btn">Annuler</button>
+                                <button type="submit" class="btn btn-primary">
+                                    <span wire:loading wire:target="update" class="spinner-border spinner-border-sm me-2"></span>Enregistrer
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            @else
+                <div class="col-md-6 col-xl-4" wire:key="client-{{ $client->id }}">
+                    <div class="card h-100">
+                        <div class="card-status-top {{ $client->statut ? 'bg-green' : 'bg-red' }}"></div>
+                        <div class="card-body">
+                            <div class="row g-2 align-items-start">
+                                <div class="col-auto">
+                                    <span class="avatar {{ $client->genre == 'femme' ? 'bg-pink-lt' : 'bg-blue-lt' }}">
+                                        {{ mb_strtoupper(mb_substr((string) $client->prenom, 0, 1).mb_substr((string) $client->nom, 0, 1)) }}
+                                    </span>
+                                </div>
+                                <div class="col text-truncate">
+                                    <a href="{{ route('tabler.client', ['client_id' => $client->id]) }}" class="fw-bold text-reset">{{ $F::person($client) }}</a>
+                                    <div class="text-secondary small">
+                                        {{ $client->genre == 'femme' ? 'Femme' : 'Homme' }} ·
+                                        <span class="{{ $client->statut ? 'text-green' : 'text-red' }}">{{ $client->statut ? 'Résident' : 'Parti' }}</span>
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <button class="btn btn-ghost-primary btn-icon" wire:click="edit({{ $client->id }})" title="Modifier">
+                                        <i class="ti ti-edit"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="small mt-2">
+                                <div><span class="text-secondary">Pièce d'identité :</span> {{ $client->ci ?: '—' }}</div>
+                                <div><span class="text-secondary">Délivrance :</span> {{ $client->delivre ?: '—' }}</div>
+                            </div>
+                        </div>
+                        <div class="card-footer py-2 d-flex justify-content-between align-items-center">
+                            @if ($client->contrat)
+                                <span class="text-truncate me-2"><i class="ti ti-home text-secondary"></i> {{ $client->contrat->appartement->nom ?? '—' }}</span>
+                                <span class="fw-bold text-nowrap">{{ $F::money($client->contrat->montant) }}</span>
+                            @else
+                                <span class="text-secondary small">Aucun contrat</span>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            @endif
+        @empty
+            @include('components.tabler.empty', ['icon' => 'ti-users', 'title' => 'Aucun client', 'message' => $search || $filtre_statut !== '' ? 'Aucun résultat pour ces critères.' : 'Ajoutez un premier client.'])
+        @endforelse
+    </div>
 
-    <div class="modal modal-blur fade" id="immoClient" tabindex="-1" role="dialog" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content">
+    @if ($clients->hasPages())
+        <div class="mt-3">{{ $clients->links() }}</div>
+    @endif
+
+    <div class="modal modal-blur fade" id="immoClient" tabindex="-1" role="dialog" aria-hidden="true" wire:ignore.self>
+        <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+            <form class="modal-content" wire:submit="store">
                 <div class="modal-header">
                     <h5 class="modal-title">Ajouter un client</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
                 </div>
                 <div class="modal-body row">
-                    <div class="form-group col-md-6 mb-3">
-                        <label class="form-label">Prénom du client </label>
-                        <input type="text" wire:model="prenom" class="form-control" placeholder="Prénom">
-                    </div>
-                    <div class="form-group col-md-6 mb-3">
-                        <label class="form-label">Nom du client </label>
-                        <input type="text" wire:model="nom" class="form-control" placeholder="nom">
-                    </div>
-                    <div class="form-group col-md-4 mb-3">
-                        <label class="form-label">Numéro d'identité</label>
-                        <input type="text" wire:model="ci" class="form-control" placeholder="Numéro de carte d'identité">
-                    </div>
-                    <div class="form-group col-md-4 mb-3">
-                        <label class="form-label">Délivrance</label>
-                        <input type="text" wire:model="delivre" class="form-control" placeholder="Date et lieu de délivrance">
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Genre</label>
-                        <select wire:model="genre" class="form-control">
-                            <option value="homme">Homme</option>
-                            <option value="femme">Femme</option>
-                        </select>
-                    </div>
+                    @if (! $client_id)
+                        @include('_form.client_form')
+                    @endif
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn me-auto" data-bs-dismiss="modal">Fermer</button>
-                    <button wire:click="store" class="btn btn-primary" data-bs-dismiss="modal">Ajouter le Client</button>
+                    <button type="submit" class="btn btn-primary">
+                        <span wire:loading wire:target="store" class="spinner-border spinner-border-sm me-2"></span>Ajouter le client
+                    </button>
                 </div>
-            </div>
+            </form>
         </div>
     </div>
 </div>

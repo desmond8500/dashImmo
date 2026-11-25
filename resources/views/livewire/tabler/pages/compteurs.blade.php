@@ -1,136 +1,101 @@
 <div>
-    @component('components.tabler.header', ['title'=>'Compteurs', 'subtitle'=>'Immo'])
-        <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCompteur">
-             <i class="ti ti-plus"></i> Compteur
-        </a>
-        <a class="btn btn-primary" target="_blank" href="{{ route('tabler.appartement_compteurs_pdf') }}">
-            PDF
+    @component('components.tabler.header', ['title' => 'Compteurs', 'subtitle' => 'Eau et électricité'])
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCompteur" wire:click="create">
+            <i class="ti ti-plus"></i> Compteur
+        </button>
+        <a class="btn btn-outline-primary" target="_blank" href="{{ route('tabler.appartement_compteurs_pdf') }}">
+            <i class="ti ti-file-type-pdf"></i> PDF
         </a>
     @endcomponent
 
-    <div class="row g-2">
-        <div class="col-md-12">
-            <div class="input-icon">
-                <span class="input-icon-addon">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2"
-                        stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                        <circle cx="10" cy="10" r="7" />
-                        <line x1="21" y1="21" x2="15" y2="15" />
-                    </svg>
-                </span>
-                <div class="input-group">
-                    <input type="{{ $search_type }}" class="form-control " wire:model.live="search" placeholder="Rechercher…">
-                    <button class="btn btn-primary" wire:click='toggle_type'>
-                        {{ ucfirst($search_type) }}
-                    </button>
-                </div>
+    <div class="row g-2 mb-3">
+        <div class="col">
+            <div class="input-group">
+                <span class="input-group-text"><i class="ti ti-search"></i></span>
+                <input type="{{ $search_type }}" class="form-control" wire:model.live.debounce.300ms="search" placeholder="Numéro de compteur ou appartement…">
+                <button class="btn" type="button" wire:click="toggle_type" title="Basculer clavier numérique / texte">
+                    {{ $search_type == 'number' ? '123' : 'Abc' }}
+                </button>
             </div>
         </div>
-        @foreach ($compteurs->sortBy('appartement.nom') as $key => $compteur)
-            <div class="col-md-4">
-                <div class="card">
-                    <div class="p-2">
+        <div class="col-12 col-sm-auto">
+            <select class="form-select" wire:model.live="filtre_type">
+                <option value="">Tous les types</option>
+                @foreach ($types as $t)
+                    <option value="{{ $t }}">{{ $t }}</option>
+                @endforeach
+            </select>
+        </div>
+    </div>
+
+    <div class="row row-cards">
+        @forelse ($compteurs as $compteur)
+            <div class="col-md-6 col-xl-4" wire:key="compteur-{{ $compteur->id }}">
+                <div class="card h-100">
+                    <div class="card-body">
                         @if ($compteur_id == $compteur->id)
-                            <div class="row p-2">
-                                <div class="form-group col-md-12">
-                                    <label class="form-label">Numéro de compteur </label>
-                                    <input type="text" wire:model="cpt_number" class="form-control" placeholder="Numéro du compteur">
+                            <form wire:submit="update" class="row">
+                                @include('_form.compteur_form')
+                                <div class="col-12 d-flex gap-2">
+                                    <button type="button" wire:click="delete" wire:confirm="Supprimer ce compteur ?" class="btn btn-outline-danger btn-icon me-auto" title="Supprimer">
+                                        <i class="ti ti-trash"></i>
+                                    </button>
+                                    <button type="button" wire:click="close" class="btn">Annuler</button>
+                                    <button type="submit" class="btn btn-primary">Enregistrer</button>
                                 </div>
-                                @error('cpt_number') <span class="text-danger">{{ $message }}</span> @enderror
-                                <div class="mb-3 form-group col-md-12">
-                                    <label class="form-label">Type de compteur</label>
-                                    <select wire:model="cpt_type" class="form-select">
-                                        <option>EAU</option>
-                                        <option>Electricité</option>
-                                    </select>
-                                    @error('cpt_type') <span class="text-danger">{{ $message }}</span> @enderror
-                                </div>
-                                <div class="mb-3 form-group col-md-12">
-                                    <label class="form-label">Appartement Associé</label>
-                                    <select wire:model="appartement_id" class="form-select">
-                                        @foreach ($apparts as $appart)
-                                        <option value="{{ $appart->id }}">{{ $appart->nom }}</option>
-                                        @endforeach
-                                    </select>
-                                    @error('appartement_id') <span class="text-danger">{{ $message }}</span> @enderror
-                                </div>
-                                <div class="col-md-12">
-                                    <div class="d-flex justify-content-between">
-                                        <button wire:click="$set('compteur_id',0)" class="btn btn-secondary">Fermer </button>
-                                        <button wire:click="delete" class="btn btn-danger btn-icon">
-                                            <i class="ti ti-trash"></i>
-                                        </button>
-                                        <button wire:click="update" class="btn btn-primary">Modifier</button>
-                                    </div>
-                                </div>
-                            </div>
+                            </form>
                         @else
-                            <div class="row ">
-                                <div class="col">
-                                    @isset($compteur->appartement)
-                                        <div class="fw-bold">{{ $compteur->appartement->nom }}</div>
-                                    @endisset
-                                    <div class="display-6">{{ $compteur->reference }}</div>
-                                </div>
+                            <div class="row g-2 align-items-center">
                                 <div class="col-auto">
-                                    <div class="text-center">
-                                        <div>
-                                            <button class="btn btn-outline-primary btn-icon" wire:click="edit('{{ $compteur->id }}')">
-                                                <i class="ti ti-edit"></i>
-                                            </button>
-                                        </div>
-                                        <div class="mt-2">
-                                            <div class="badge text-white bg-blue">{{ $compteur->type }}</div>
-                                        </div>
-                                    </div>
+                                    <span class="avatar {{ $compteur->type === 'EAU' ? 'bg-blue-lt' : 'bg-yellow-lt' }}">
+                                        <i class="ti {{ $compteur->type === 'EAU' ? 'ti-droplet' : 'ti-bolt' }}"></i>
+                                    </span>
+                                </div>
+                                <div class="col text-truncate">
+                                    @if ($compteur->appartement)
+                                        <a href="{{ route('tabler.appartement', ['appartement_id' => $compteur->appartement->id]) }}" class="fw-bold text-reset">{{ $compteur->appartement->nom }}</a>
+                                    @else
+                                        <span class="text-secondary">Sans appartement</span>
+                                    @endif
+                                    <div class="h2 mb-0 font-monospace">{{ $compteur->reference ?: '—' }}</div>
+                                </div>
+                                <div class="col-auto text-end">
+                                    <button class="btn btn-ghost-primary btn-icon" wire:click="edit({{ $compteur->id }})" title="Modifier">
+                                        <i class="ti ti-edit"></i>
+                                    </button>
+                                    <div class="mt-1"><span class="badge {{ $compteur->type === 'EAU' ? 'bg-blue-lt' : 'bg-yellow-lt' }}">{{ $compteur->type }}</span></div>
                                 </div>
                             </div>
                         @endif
                     </div>
                 </div>
             </div>
-        @endforeach
-
+        @empty
+            @include('components.tabler.empty', ['icon' => 'ti-gauge', 'title' => 'Aucun compteur', 'message' => $search || $filtre_type ? 'Aucun résultat pour ces critères.' : 'Ajoutez un premier compteur.'])
+        @endforelse
     </div>
 
-    {{-- Modal ========================================================= --}}
+    @if ($compteurs->hasPages())
+        <div class="mt-3">{{ $compteurs->links() }}</div>
+    @endif
 
     <div wire:ignore.self class="modal modal-blur fade" id="modalCompteur" tabindex="-1" role="dialog" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" role="document">
-            <form wire:submit.prevent='store' class="modal-content">
+            <form wire:submit="store" class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Ajouter un compteur</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
                 </div>
                 <div class="modal-body row">
-                    <div class="form-group col-md-8">
-                        <label class="form-label">Numéro de compteur </label>
-                        <input type="text" wire:model="cpt_number" class="form-control" placeholder="Numéro du compteur">
-                        @error('cpt_number') <span class="text-danger">{{ $message }}</span> @enderror
-                    </div>
-                    <div class="mb-3 form-group col-md-4">
-                        <label class="form-label">Type de compteur</label>
-                        <select wire:model="cpt_type" class="form-control">
-                            <option>EAU</option>
-                            <option>Electricité</option>
-                        </select>
-                        @error('cpt_type') <span class="text-danger">{{ $message }}</span> @enderror
-                    </div>
-                    <div class="mb-3 form-group col-md-6">
-                        <label class="form-label">Appartement Associé</label>
-                        <select wire:model="appartement_id" class="form-control">
-                            <option value="1">Choisir un appartement</option>
-                            @foreach ($apparts as $appart)
-                                <option value="{{ $appart->id }}">{{ $appart->nom }}</option>
-                            @endforeach
-                        </select>
-                        @error('appartement_id') <span class="text-danger">{{ $message }}</span> @enderror
-                    </div>
+                    @if (! $compteur_id)
+                        @include('_form.compteur_form', ['col' => 'col-md-6'])
+                    @endif
                 </div>
                 <div class="modal-footer">
-                    <a type="button" class="btn btn-secondary me-auto" data-bs-dismiss="modal">Fermer</a>
-                    <button class="btn btn-primary" data-bs-dismiss="modal">Ajouter le Compteur</button>
+                    <button type="button" class="btn me-auto" data-bs-dismiss="modal">Fermer</button>
+                    <button type="submit" class="btn btn-primary">
+                        <span wire:loading wire:target="store" class="spinner-border spinner-border-sm me-2"></span>Ajouter le compteur
+                    </button>
                 </div>
             </form>
         </div>

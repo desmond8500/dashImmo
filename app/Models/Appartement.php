@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -30,6 +32,16 @@ class Appartement extends Model
     public function compteur(): HasOne
     {
         return $this->hasOne(Compteur::class);
+    }
+
+    public function compteurs(): HasMany
+    {
+        return $this->hasMany(Compteur::class);
+    }
+
+    public function factures(): HasManyThrough
+    {
+        return $this->hasManyThrough(Facture::class, Compteur::class);
     }
 
     public function contrat(): HasOne

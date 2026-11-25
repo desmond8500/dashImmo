@@ -2,60 +2,87 @@
 
 namespace App\Http\Livewire\Tabler\Pages;
 
+use App\Http\Livewire\Tabler\Concerns\InteractsWithPagination;
+use App\Http\Livewire\Tabler\Concerns\InteractsWithUi;
 use App\Models\Appartement;
 use App\Models\Client;
 use App\Models\Contrat;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 
 class Contrats extends Component
 {
-    public $client_id, $appartement_id, $montant, $date, $type = 'habitation', $sign1=false, $sign2 =false;
-    public $contrat_id, $selected = array();
-    public $debut;
-    public $fin;
+    use InteractsWithPagination, InteractsWithUi;
+
+    public const TYPES = ['habitation' => 'Habitation', 'bureau' => 'Bureau'];
+
+    #[Url(except: '')]
     public $search = '';
+
+    public $client_id, $appartement_id, $montant, $date, $type = 'habitation', $sign1 = 0, $sign2 = 0;
+    public $debut, $fin;
+    public $contrat_id;
+
+    protected function rules(): array
+    {
+        return [
+            'client_id' => ['required', 'exists:clients,id'],
+            'appartement_id' => ['required', 'exists:appartements,id'],
+            'montant' => ['required', 'numeric', 'min:0'],
+            'type' => ['required', 'in:'.implode(',', array_keys(self::TYPES))],
+            'date' => ['nullable', 'date'],
+            'debut' => ['nullable', 'date'],
+            'fin' => array_filter(['nullable', 'date', $this->debut ? 'after_or_equal:debut' : null]),
+            'sign1' => ['boolean'],
+            'sign2' => ['boolean'],
+        ];
+    }
+
+    protected $validationAttributes = [
+        'client_id' => 'client',
+        'appartement_id' => 'appartement',
+        'debut' => 'date de début',
+        'fin' => 'date de fin',
+        'sign1' => 'signature',
+    ];
 
     public function render()
     {
-        return view('livewire.tabler.pages.contrats',[
-            'contrats' => $this->getContract(),
-            'clients' => Client::all(),
-            'appartements' => Appartement::all(),
+        $search = trim($this->search);
+
+        return view('livewire.tabler.pages.contrats', [
+            'contrats' => Contrat::query()
+                ->with(['client', 'appartement'])
+                ->when($search !== '', fn ($q) => $q->where(fn ($q) => $q
+                    ->whereHas('client', fn ($q) => $q->where('nom', 'like', "%$search%")->orWhere('prenom', 'like', "%$search%"))
+                    ->orWhereHas('appartement', fn ($q) => $q->where('nom', 'like', "%$search%"))))
+                ->orderBy(Client::select('nom')->whereColumn('clients.id', 'contrats.client_id'))
+                ->paginate(12),
+            'clients' => Client::orderBy('nom')->orderBy('prenom')->get(['id', 'prenom', 'nom']),
+            'appartements' => Appartement::orderBy('nom')->get(['id', 'nom']),
+            'types' => self::TYPES,
         ])->extends('app.layout')->section('content');
     }
 
-    public function selectContract($contract_id)
+    public function create()
     {
-        $contrat = Contrat::find($contract_id);
-        array_push($this->selected, $contrat);
-    }
-    public function remove_contract($contrat_id)
-    {
-        foreach ($this->selected as $key => $selected) {
-            if ($key == $contrat_id) {
-                unset($this->selected[$key]);
-            } else {
-            }
-        }
+        $this->close();
     }
 
     public function add_contract()
     {
-        Contrat::firstOrCreate([
-            'client_id' => $this->client_id,
-            'appartement_id' => $this->appartement_id,
-            'montant' => $this->montant,
-            'date' => $this->date,
-            'type' => $this->type,
-            'sign1' => $this->sign1,
-            'sign2' => $this->sign2,
-        ]);
+        Contrat::create($this->payload());
+
+        $this->close();
+        $this->closeModal('modalContrat');
+        $this->notify('Contrat ajouté.');
     }
 
     public function edit_contract($contrat_id)
     {
-        $contrat = Contrat::find($contrat_id);
-        $this->contrat_id = $contrat_id;
+        $this->resetValidation();
+        $contrat = Contrat::findOrFail($contrat_id);
+        $this->contrat_id = $contrat->id;
 
         $this->client_id = $contrat->client_id;
         $this->appartement_id = $contrat->appartement_id;
@@ -63,44 +90,35 @@ class Contrats extends Component
         $this->date = $contrat->date;
         $this->debut = $contrat->debut;
         $this->fin = $contrat->fin;
-        $this->type = $contrat->type;
-        $this->sign1 = $contrat->sign1;
-        $this->sign2 = $contrat->sign2;
+        $this->type = $contrat->type ?: 'habitation';
+        $this->sign1 = (int) $contrat->sign1;
+        $this->sign2 = (int) $contrat->sign2;
     }
 
     public function update_contract()
     {
-        $contrat = Contrat::find($this->contrat_id);
+        Contrat::findOrFail($this->contrat_id)->update($this->payload());
 
-        $contrat->client_id = $this->client_id;
-        $contrat->appartement_id = $this->appartement_id;
-        $contrat->montant = $this->montant;
-        $contrat->date = $this->date;
-        $contrat->type = $this->type;
-        $contrat->sign1 = $this->sign1;
-        $contrat->sign2 = $this->sign2;
-        $contrat->debut = $this->debut;
-        $contrat->fin = $this->fin;
-
-        $contrat->save();
-
-        $this->reset('contrat_id');
+        $this->close();
+        $this->notify('Contrat modifié.');
     }
 
-    public function getContract()
+    public function close()
     {
-        if ($this->search) {
-            $client = Client::where('nom', 'like', '%' . $this->search . '%')
-                ->orWhere('prenom', 'like', '%' . $this->search . '%')
-                ->first();
+        $this->resetValidation();
+        $this->reset('contrat_id', 'client_id', 'appartement_id', 'montant', 'date', 'debut', 'fin', 'type', 'sign1', 'sign2');
+    }
 
-            if (! $client) {
-                return Contrat::whereRaw('1 = 0')->get();
-            }
+    private function payload(): array
+    {
+        $data = $this->validate();
 
-            return Contrat::where('client_id', $client->id)->get();
+        // Les dates restent des chaînes "Y-m-d" (cf. App\Models\Contrat) ; un
+        // champ vidé devient null plutôt qu'une chaîne vide.
+        foreach (['date', 'debut', 'fin'] as $key) {
+            $data[$key] = $data[$key] ?: null;
         }
 
-        return Contrat::get();
+        return $data;
     }
 }
